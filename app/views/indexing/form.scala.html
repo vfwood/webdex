@@ -2,13 +2,38 @@
 
 @mainTemplate("Index Content.") {
 
-	<form method="post" action="@routes.Indexing.addSite">
-		URL to index: <input type="text" name="url" style="width:400px">
+	<form method="post" action="@routes.Indexing.addSite" name="addSite">
+		<table class="formTable">
+			<tr>
+				<td>
+					URL to index: 
+				</td>
+				<td>
+					<input type="text" name="url" style="width:400px">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Title (leave blank to auto-detect): 
+				</td>
+				<td>
+					<textarea style="width:400px" name="title"></textarea>
+				</td>
+			</tr>
+		</table>
 		<input type="submit" value="Add to index">
+		<input type="button" value="Clear index" onclick="doClearIndex()">
 	</form>
 
-	<form method="post" action="@routes.Indexing.clearIndex">
-		<input type="submit" value="Clear index">
+	<form method="post" action="@routes.Indexing.clearIndex" name="clearIndex">
 	</form>
+	<script type="text/javascript">
+
+	function doClearIndex() {
+		if (confirm("Really delete everything indexed?")) {
+			document.forms['clearIndex'].submit();
+		}
+	}
+	</script>
 
 }

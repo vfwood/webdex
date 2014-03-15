@@ -37,4 +37,4 @@ object Search extends Controller {
   }
 }
 
-case class FetchedDocument(uri: String, added: String, id: String)
+case class FetchedDocument(uri: String, added: String, id: String, title:String)

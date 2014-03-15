@@ -6,15 +6,16 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.collection.JavaConversions
 import scala.collection.mutable.ListBuffer
 import org.apache.lucene.analysis.standard.StandardAnalyzer
-import org.apache.lucene.document.{Document, Field, StringField, TextField}
-import org.apache.lucene.index.{DirectoryReader, IndexWriter, IndexWriterConfig}
+import org.apache.lucene.document.{ Document, Field, StringField, TextField }
+import org.apache.lucene.index.{ DirectoryReader, IndexWriter, IndexWriterConfig }
 import org.apache.lucene.queryparser.classic.ParseException
-import org.apache.lucene.search.{IndexSearcher, Query, TopScoreDocCollector}
+import org.apache.lucene.search.{ IndexSearcher, Query, TopScoreDocCollector }
 import org.apache.lucene.store.FSDirectory
 import org.apache.lucene.util.Version
 import controllers.FetchedDocument
 import org.apache.lucene.queryparser.classic.QueryParser
 import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser
 
 object LuceneService {
 
@@ -24,47 +25,58 @@ object LuceneService {
 
   def index = { FSDirectory.open(new File(indexDir)) }
 
-  def getIndexWriter() = {
-    new IndexWriter(index, new IndexWriterConfig(version, analyser))
-  }
-
   def analyser = { new StandardAnalyzer(version) }
 
   def clearIndex() = {
-    val indexWriter = getIndexWriter()
-    indexWriter.deleteAll
-    indexWriter.close
+    withIndexWriter {
+      indexWriter => indexWriter.deleteAll
+    }
   }
 
   def createWriterConfig = { new IndexWriterConfig(version, analyser) }
 
-  def addSiteToIndex(uri: String) = {
-    val indexWriter = getIndexWriter()
+  def addSiteToIndex(uri: String, title:String="") = {
+    withIndexWriter {
+      indexWriter =>
+        val doc = new Document()
+        val id = nextId
+        println("Using id " + id)
+        val contents = read(uri)
+        val indexTitle = if (title.isEmpty()) titleFrom(contents) else title
+        println(s"Using title [$indexTitle]")
+        doc.add(new StringField("id", id, Field.Store.YES))
+        doc.add(new TextField("added", new Date().toString(), Field.Store.YES))
+        doc.add(new TextField("contents", contents, Field.Store.NO))
+        doc.add(new TextField("title", indexTitle, Field.Store.YES))
+        doc.add(new StringField("uri", uri, Field.Store.YES))
+        doc.add(new StringField("type", "web-url", Field.Store.YES))
+        indexWriter.addDocument(doc)
+    }
+  }
+  
+  def titleFrom(content:String) = {
     try {
-      val doc = new Document()
-      val id = nextId
-      println("Using id " + id)
-      doc.add(new StringField("id", id, Field.Store.YES))
-      doc.add(new TextField("added", new Date().toString(), Field.Store.YES))
-      doc.add(new TextField("contents", read(uri), Field.Store.NO))
-      doc.add(new StringField("uri", uri, Field.Store.YES))
-      doc.add(new StringField("type", "web-url", Field.Store.YES))
-      indexWriter.addDocument(doc)
-    } finally {
-      indexWriter.close()
+    	val from = content.indexOf("title") + 6
+    	val to = content.substring(from).indexOf("</title>")
+    	content.substring(from, from+to).trim
+    } catch {
+    	case e:Exception => e.printStackTrace(); "error"
     }
   }
 
   def delete(id: String) = {
-    val queryParser = new QueryParser(version, "id", analyser)
-    val q = queryParser.parse(id)
-    val indexWriter = getIndexWriter()
-    indexWriter.deleteDocuments(q)
-    indexWriter.close
+    withIndexWriter {
+      indexWriter =>
+        val queryParser = new QueryParser(version, "id", analyser)
+        val q = queryParser.parse(id)
+        indexWriter.deleteDocuments(q)
+    }
   }
 
   def performSearch(term: String) = {
-    val queryParser = new QueryParser(version, "contents", analyser)
+//    val queryParser = new QueryParser(version, "contents", analyser)
+    val fields = Array("contents", "title")
+    val queryParser = new MultiFieldQueryParser(version, fields, analyser)
     var q: Query = null
     try {
       q = queryParser.parse(term)
@@ -85,7 +97,7 @@ object LuceneService {
       val docId = hits(i).doc;
       val d = searcher.doc(docId)
       val fields = JavaConversions.collectionAsScalaIterable(d.getFields())
-      results.append(FetchedDocument(d.get("uri"), d.get("added"), d.get("id")))
+      results.append(FetchedDocument(d.get("uri"), d.get("added"), d.get("id"), d.get("title")))
     }
     reader.close()
     results
@@ -95,13 +107,24 @@ object LuceneService {
     val file = new java.io.File(indexDir)
     !file.exists
   }
-  
+
   def createIndex() = {
     new File(indexDir).mkdir()
-    getIndexWriter.commit()
+    withIndexWriter {
+      indexWriter =>
+    }
   }
-  
+
   def nextId = System.currentTimeMillis() + "." + idSource.incrementAndGet()
 
   def read(uri: String) = scala.io.Source.fromURL(uri).mkString
+
+  def withIndexWriter(f: IndexWriter => Unit) = {
+    val indexWriter = new IndexWriter(index, new IndexWriterConfig(version, analyser))
+    try {
+      f(indexWriter); indexWriter.close()
+    } catch {
+      case e: Exception => e.printStackTrace(); indexWriter.rollback(); indexWriter.close()
+    }
+  }
 }

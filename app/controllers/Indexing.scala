@@ -32,8 +32,9 @@ object Indexing extends Controller {
 
   def addSite = Action(parse.tolerantFormUrlEncoded) { implicit request =>
     val site = request.body.get("url").map(_.head).getOrElse("")
+    val title = request.body.get("title").map(_.head).getOrElse("")
     if (!site.isEmpty()) {
-      LuceneService.addSiteToIndex(site)
+      LuceneService.addSiteToIndex(site, title)
     }
     Ok(views.html.indexing.indexed())
   }
