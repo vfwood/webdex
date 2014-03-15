@@ -19,23 +19,17 @@ object Search extends Controller {
   val luceneVersion = Version.LUCENE_47
 
   def index = Action { implicit request =>
-    if (models.Roles.authorised("search", request)) {
-      println("Authorized")
-      Ok(views.html.search.index())
-    } else {
-      println("Not Found, tee hee.")
-      NotFound("Unable to locate the resource specified.")
-    }
+    Ok(views.html.search.index())
   }
 
   def performSearch = Action(parse.tolerantFormUrlEncoded) { implicit request =>
     val term = request.body.get("term").map(_.head).getOrElse("")
 
-    val results = LuceneService.performSearch(term:String)
+    val results = LuceneService.performSearch(term: String)
     Ok(views.html.search.results(term, results))
   }
 
-  def showFile(filename:String) = Action(parse.tolerantFormUrlEncoded) { implicit request =>
+  def showFile(filename: String) = Action(parse.tolerantFormUrlEncoded) { implicit request =>
     val uri = "/Users/vfwood/learn-play/pbs/data/" + filename
     Ok.sendFile(
       content = new java.io.File(uri),

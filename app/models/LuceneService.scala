@@ -6,17 +6,10 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.collection.JavaConversions
 import scala.collection.mutable.ListBuffer
 import org.apache.lucene.analysis.standard.StandardAnalyzer
-import org.apache.lucene.document.Document
-import org.apache.lucene.document.Field
-import org.apache.lucene.document.StringField
-import org.apache.lucene.document.TextField
-import org.apache.lucene.index.DirectoryReader
-import org.apache.lucene.index.IndexWriter
-import org.apache.lucene.index.IndexWriterConfig
+import org.apache.lucene.document.{Document, Field, StringField, TextField}
+import org.apache.lucene.index.{DirectoryReader, IndexWriter, IndexWriterConfig}
 import org.apache.lucene.queryparser.classic.ParseException
-import org.apache.lucene.search.IndexSearcher
-import org.apache.lucene.search.Query
-import org.apache.lucene.search.TopScoreDocCollector
+import org.apache.lucene.search.{IndexSearcher, Query, TopScoreDocCollector}
 import org.apache.lucene.store.FSDirectory
 import org.apache.lucene.util.Version
 import controllers.FetchedDocument
@@ -25,7 +18,7 @@ import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil
 
 object LuceneService {
 
-  val indexDir = "/Users/vfwood/pbs-search"
+  val indexDir = System.getProperty("user.home") + File.separator + "webdex-data"
   val idSource = new AtomicLong()
   val version = Version.LUCENE_47
 
@@ -98,6 +91,16 @@ object LuceneService {
     results
   }
 
+  def noIndexExists = {
+    val file = new java.io.File(indexDir)
+    !file.exists
+  }
+  
+  def createIndex() = {
+    new File(indexDir).mkdir()
+    getIndexWriter.commit()
+  }
+  
   def nextId = System.currentTimeMillis() + "." + idSource.incrementAndGet()
 
   def read(uri: String) = scala.io.Source.fromURL(uri).mkString

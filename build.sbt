@@ -1,4 +1,4 @@
-name := "pbs"
+name := "webdex"
 
 version := "1.0-SNAPSHOT"
 

@@ -22,6 +22,13 @@ object Indexing extends Controller {
   def form = Action { implicit request =>
     Ok(views.html.indexing.form())
   }
+  
+  def createIndex = Action { implicit request =>
+    if (LuceneService.noIndexExists) {
+      LuceneService.createIndex()
+    }
+    Ok(views.html.indexCreated())
+  }
 
   def addSite = Action(parse.tolerantFormUrlEncoded) { implicit request =>
     val site = request.body.get("url").map(_.head).getOrElse("")

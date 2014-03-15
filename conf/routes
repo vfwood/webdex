@@ -26,7 +26,8 @@ GET     /indexForm			controllers.Indexing.form
 POST    /indexing/addSite	controllers.Indexing.addSite
 POST    /indexing/delete	controllers.Indexing.delete
 POST    /indexing/refresh	controllers.Indexing.refresh
-POST    /indexing/clearIndex controllers.Indexing.clearIndex
+GET     /indexing/createIndex  controllers.Indexing.createIndex
+POST    /indexing/clearIndex    controllers.Indexing.clearIndex
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
