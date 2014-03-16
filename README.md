@@ -8,5 +8,3 @@ It uses Play / Scala with Lucene 4.7 to provide a User Interface and backing Ser
 . URL / Content Indexing using Lucene
 . Indexed Content querying using Lucene
 
-TODO:
-add mysql table generation script
