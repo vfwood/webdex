@@ -54,7 +54,7 @@ object LuceneService {
         println(s"Using title [$indexTitle]")
         doc.add(new StringField("id", id, Field.Store.YES))
         doc.add(new TextField("added", new Date().toString(), Field.Store.YES))
-        doc.add(new TextField("contents", contents, Field.Store.NO))
+        doc.add(new TextField("contents", clean(contents), Field.Store.NO))
         doc.add(new TextField("title", indexTitle, Field.Store.YES))
         doc.add(new TextField("uri", uri, Field.Store.YES))
         doc.add(new StringField("type", "web-url", Field.Store.YES))
@@ -125,6 +125,8 @@ object LuceneService {
 
   def nextId = System.currentTimeMillis() + "." + idSource.incrementAndGet()
 
+  def clean(html:String) = html.replaceAll("\\<.*?>","")
+  
   def read(uri: String) = scala.io.Source.fromURL(uri).mkString
 
   def withIndexWriter(f: IndexWriter => Unit) = {

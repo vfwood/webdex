@@ -12,14 +12,10 @@
 			<a href="@doc.uri" target="blank">@doc.title</a>
 			<div>
 			<span style="color:green;font-weight:bold">
-			@for(i <- 0.until(doc.scoreAsInt)){
-				*
-			}
+			@for(i <- 0.until(doc.scoreAsInt)){ * }
 			</span>
-			<span style="color:silver;font-weight:bold">
-			@for(i <- doc.scoreAsInt.until(10)){
-				*
-			}
+			<span style="color:#F0F0F5;font-weight:bold">
+			@for(i <- doc.scoreAsInt.until(10)){ * }
 			</span>
 			<!-- Added --> @doc.added</div>
 			<div style="margin-bottom:15px">			
