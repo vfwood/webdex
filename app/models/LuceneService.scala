@@ -3,19 +3,27 @@ package models
 import java.io.File
 import java.util.Date
 import java.util.concurrent.atomic.AtomicLong
+
 import scala.collection.JavaConversions
 import scala.collection.mutable.ListBuffer
+
 import org.apache.lucene.analysis.standard.StandardAnalyzer
-import org.apache.lucene.document.{ Document, Field, StringField, TextField }
-import org.apache.lucene.index.{ DirectoryReader, IndexWriter, IndexWriterConfig }
+import org.apache.lucene.document.Document
+import org.apache.lucene.document.Field
+import org.apache.lucene.document.StringField
+import org.apache.lucene.document.TextField
+import org.apache.lucene.index.DirectoryReader
+import org.apache.lucene.index.IndexWriter
+import org.apache.lucene.index.IndexWriterConfig
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser
 import org.apache.lucene.queryparser.classic.ParseException
-import org.apache.lucene.search.{ IndexSearcher, Query, TopScoreDocCollector }
-import org.apache.lucene.store.FSDirectory
-import org.apache.lucene.util.Version
-import controllers.FetchedDocument
 import org.apache.lucene.queryparser.classic.QueryParser
 import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil
-import org.apache.lucene.queryparser.classic.MultiFieldQueryParser
+import org.apache.lucene.search.IndexSearcher
+import org.apache.lucene.search.Query
+import org.apache.lucene.search.TopScoreDocCollector
+import org.apache.lucene.store.FSDirectory
+import org.apache.lucene.util.Version
 
 object LuceneService {
 
@@ -35,7 +43,7 @@ object LuceneService {
 
   def createWriterConfig = { new IndexWriterConfig(version, analyser) }
 
-  def addSiteToIndex(uri: String, title:String="") = {
+  def addSiteToIndex(uri: String, title: String = "") = {
     withIndexWriter {
       indexWriter =>
         val doc = new Document()
@@ -48,19 +56,19 @@ object LuceneService {
         doc.add(new TextField("added", new Date().toString(), Field.Store.YES))
         doc.add(new TextField("contents", contents, Field.Store.NO))
         doc.add(new TextField("title", indexTitle, Field.Store.YES))
-        doc.add(new StringField("uri", uri, Field.Store.YES))
+        doc.add(new TextField("uri", uri, Field.Store.YES))
         doc.add(new StringField("type", "web-url", Field.Store.YES))
         indexWriter.addDocument(doc)
     }
   }
-  
-  def titleFrom(content:String) = {
+
+  def titleFrom(content: String) = {
     try {
-    	val from = content.indexOf("title") + 6
-    	val to = content.substring(from).indexOf("</title>")
-    	content.substring(from, from+to).trim
+      val from = content.indexOf("title") + 6
+      val to = content.substring(from).indexOf("</title>")
+      content.substring(from, from + to).trim
     } catch {
-    	case e:Exception => e.printStackTrace(); "error"
+      case e: Exception => e.printStackTrace(); "error"
     }
   }
 
@@ -74,7 +82,6 @@ object LuceneService {
   }
 
   def performSearch(term: String) = {
-//    val queryParser = new QueryParser(version, "contents", analyser)
     val fields = Array("contents", "title")
     val queryParser = new MultiFieldQueryParser(version, fields, analyser)
     var q: Query = null
@@ -95,9 +102,10 @@ object LuceneService {
     println("Found " + hits.length + " hits.")
     for (i <- 0.until(hits.length)) {
       val docId = hits(i).doc;
+      val score = hits(i).score
       val d = searcher.doc(docId)
       val fields = JavaConversions.collectionAsScalaIterable(d.getFields())
-      results.append(FetchedDocument(d.get("uri"), d.get("added"), d.get("id"), d.get("title")))
+      results.append(FetchedDocument(d.get("uri"), d.get("added"), d.get("id"), d.get("title"), score))
     }
     reader.close()
     results

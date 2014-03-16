@@ -36,5 +36,3 @@ object Search extends Controller {
       inline = true)
   }
 }
-
-case class FetchedDocument(uri: String, added: String, id: String, title:String)
