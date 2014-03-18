@@ -24,7 +24,14 @@ object Search extends Controller {
 
   def performSearch = Action(parse.tolerantFormUrlEncoded) { implicit request =>
     val term = request.body.get("term").map(_.head).getOrElse("")
-
+    println(s"search term = '$term'")
+    val results = LuceneService.performSearch(term: String)
+    Ok(views.html.search.results(term, results))
+  }
+  
+  def getSearch = Action { implicit request =>
+    val term = request.getQueryString("term").getOrElse("")
+    println(s"search term = '$term'")
     val results = LuceneService.performSearch(term: String)
     Ok(views.html.search.results(term, results))
   }

@@ -19,6 +19,7 @@ GET     /adminUsers			controllers.Users.adminUsers
 GET     /adminUserModify/:username  controllers.Users.adminUserModify(username:String)
 
 GET     /search				controllers.Search.index
+GET     /performSearch   	controllers.Search.getSearch
 POST    /performSearch   	controllers.Search.performSearch
 GET     /showFile/:filename           controllers.Search.showFile(filename:String)
 

@@ -1,7 +1,10 @@
 @(message: String)(implicit flash:Flash, request: play.api.mvc.Request[Any])
 
-@mainTemplate("Welcome to PBS") {
-
-    Please choose an option from the Main Menu.
+@mainTemplate("Welcome to WebDex") {
+	@searchFocus()
+    <form method="get" action="@routes.Search.performSearch">
+    	<input type="text" name="term" id="term">
+    	<input type="submit" value="search">
+    </form>
 
 }
