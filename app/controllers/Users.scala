@@ -1,6 +1,8 @@
 package controllers
 
 import play.api._
+import play.api.data._
+import play.api.data.Forms._
 import play.api.mvc._
 import play.api.db.DB
 import models.CurrentUser
@@ -29,10 +31,9 @@ object Users extends Controller {
   }
 
   def processNewAdmin = Action(parse.tolerantFormUrlEncoded) { implicit request =>
-    val username = request.body.get("username").map(_.head).getOrElse("")
-    val password = request.body.get("password").map(_.head).getOrElse("")
-    val password2 = request.body.get("password2").map(_.head).getOrElse("")
-
+    val userForm = Form(tuple("username" -> text, "password" -> text, "password2" -> text))
+    val (username, password, password2) = userForm.bindFromRequest.get
+    
     // Build up errors.
     val errors = new Errors()
     if (CurrentUser.getUsers().exists(_.name == username)) {

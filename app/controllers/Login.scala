@@ -3,6 +3,8 @@ package controllers
 import play.api._
 import play.api.mvc._
 import models.CurrentUser
+import play.api.data._
+import play.api.data.Forms._
 
 object Login extends Controller {
 
@@ -24,17 +26,15 @@ object Login extends Controller {
   } 
   
   def processLogin = Action(parse.tolerantFormUrlEncoded) { implicit request =>
-    val username = request.body.get("username").map(_.head).getOrElse("not set")
-    val password = request.body.get("password").map(_.head).getOrElse("not set")
-    println("Username: " + username)
+    val (username, password) = loginForm.bindFromRequest.get
     val user = CurrentUser.getUser(username, password)
     user match {
       case None => Redirect(routes.Login.form).flashing("errorMessage" -> "bad credentials", "username" -> username)
       case Some(u) => {
-        val loginId = CurrentUser.generateLoginId.toString()
-        u.loginId = loginId
-        Redirect("loginSuccess").withSession("username" -> u.name, "loginId" -> u.loginId, "roles" -> u.roles.mkString(","))
+        Redirect("loginSuccess").withSession("username" -> u.name, "roles" -> u.roles.mkString(","))
       }
     }
   }
+  
+  val loginForm = Form(tuple("username"-> text, "password" -> text))
 }
