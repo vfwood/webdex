@@ -21,6 +21,7 @@ GET     /adminUserModify/:username  controllers.Users.adminUserModify(username:S
 GET     /search				controllers.Search.index
 GET     /performSearch   	controllers.Search.getSearch
 POST    /performSearch   	controllers.Search.performSearch
+POST    /performSearch/   	controllers.Search.explain
 GET     /showFile/:filename           controllers.Search.showFile(filename:String)
 
 GET     /indexForm			controllers.Indexing.form

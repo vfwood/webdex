@@ -42,13 +42,16 @@
 						<li><a href="@routes.About.index()">About</a></li>
 					}
 				
-					@if(request.session.get("username")){
-						<li><a href="@routes.Login.logout()">Log Out</a></li>
-					}
 					<li><a href="@routes.Search.index()">Search</a></li>
 					@Roles.protect("admin", request){
 						<li><a href="@routes.Indexing.form()">Index</a></li>
 					}
+					
+					@if(request.session.get("username")){
+						<li class="divider"></li>
+						<li><a href="@routes.Login.logout()">Log Out</a></li>
+					}
+					
 			      </ul>
 			      
 			    </div><!-- /.navbar-collapse -->

@@ -1,10 +1,11 @@
 @(term:String, results:scala.collection.mutable.ListBuffer[models.FetchedDocument])(implicit flash:Flash, request: play.api.mvc.Request[Any])
 
 @mainTemplate(s"${results.length} Search Results for '$term'") {
-	
+
+	@searchFocus()	
 
 	<form method="post" action="performSearch" style="margin:10px 0px">
-		<input type="text" name="term" value="@term" style="width:600px">
+		<input type="text" name="term" value="@term" id="term">
 		<input type="submit" value="Search">
 	</form>
 	
@@ -29,7 +30,17 @@
 					<input type="hidden" name="id" value="@doc.id">
 					<input type="submit" value="delete">
 				</form>
+				<form method="post" target="_blank" style="display:inline" action="@routes.Search.explain()">
+					<input type="hidden" name="id" value="@doc.id">
+					<input type="hidden" name="term" value="@term">
+					<input type="submit" value="explain">
+				</form>
 			</div>
 		}
 	</table>
+	<script>
+	function explain(id) {
+		window.open("about:mozilla");
+	}
+	</script>
 }

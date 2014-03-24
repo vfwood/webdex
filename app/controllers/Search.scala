@@ -10,6 +10,8 @@ import org.apache.lucene.store.FSDirectory
 import org.apache.lucene.util.Version
 import play.api._
 import play.api.mvc._
+import play.api.data._
+import play.api.data.Forms._
 import scala.collection.JavaConversions
 import models.LuceneService
 
@@ -41,5 +43,11 @@ object Search extends Controller {
     Ok.sendFile(
       content = new java.io.File(uri),
       inline = true)
+  }
+  
+  def explain = Action(parse.tolerantFormUrlEncoded)  { implicit request =>
+    val (id, term) = Form(tuple("id" -> text, "term" -> text)).bindFromRequest.get
+    val explanation:String = LuceneService.explain(id, term)
+    Ok(explanation)
   }
 }

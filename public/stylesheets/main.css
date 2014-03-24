@@ -43,3 +43,7 @@ border-radius:.5em;
 .right {
 	text-align:right
 }
+
+#term {
+	width:600px;
+}

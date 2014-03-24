@@ -1,28 +1,21 @@
 package controllers
 
-import play.api._
-import play.api.mvc._
-import org.apache.lucene.analysis.standard.StandardAnalyzer
-import org.apache.lucene.util.Version
-import org.apache.lucene.store.FSDirectory
-import java.io.File
-import org.apache.lucene.index.IndexWriterConfig
-import org.apache.lucene.index.IndexWriter
-import org.apache.lucene.document.Document
-import org.apache.lucene.document.StringField
-import org.apache.lucene.document.TextField
-import java.util.Date
-import org.apache.lucene.document.Field
-import org.apache.lucene.index.IndexReader
-import org.apache.lucene.index.DirectoryReader
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.future
+
 import models.LuceneService
+import play.api.data.Form
+import play.api.data.Forms.text
+import play.api.data.Forms.tuple
+import play.api.mvc.Action
+import play.api.mvc.Controller
 
 object Indexing extends Controller {
 
   def form = Action { implicit request =>
     Ok(views.html.indexing.form())
   }
-  
+
   def createIndex = Action { implicit request =>
     if (LuceneService.noIndexExists) {
       LuceneService.createIndex()
@@ -31,15 +24,16 @@ object Indexing extends Controller {
   }
 
   def addSite = Action(parse.tolerantFormUrlEncoded) { implicit request =>
-    val site = request.body.get("url").map(_.head).getOrElse("")
-    val title = request.body.get("title").map(_.head).getOrElse("")
+    val (site, title, withLinks) = Form(tuple("url" -> text, "title" -> text, "chkLinks" -> text)).bindFromRequest.get
     if (!site.isEmpty()) {
-      LuceneService.addSiteToIndex(site, title)
+      future {
+        LuceneService.addSiteToIndex(site, title, withLinks == "on")
+      }
     }
     Ok(views.html.indexing.indexed())
   }
-  
-  def refresh() = Action(parse.tolerantFormUrlEncoded) { implicit request => 
+
+  def refresh() = Action(parse.tolerantFormUrlEncoded) { implicit request =>
     val id = request.body.get("id").map(_.head).getOrElse("")
     if (id.isEmpty()) {
       NotFound("No doc id passed")
@@ -51,8 +45,8 @@ object Indexing extends Controller {
       Ok(views.html.indexing.updated())
     }
   }
-  
-  def delete() = Action(parse.tolerantFormUrlEncoded) { implicit request => 
+
+  def delete() = Action(parse.tolerantFormUrlEncoded) { implicit request =>
     val id = request.body.get("id").map(_.head).getOrElse("")
     if (id.isEmpty()) {
       NotFound("No doc id passed")
@@ -62,7 +56,7 @@ object Indexing extends Controller {
       Ok(views.html.indexing.deleted())
     }
   }
-  
+
   def clearIndex = Action { implicit request =>
     LuceneService.clearIndex()
     Ok(views.html.indexing.deletedAll())

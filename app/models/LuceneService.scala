@@ -31,6 +31,39 @@ object LuceneService {
   val idSource = new AtomicLong()
   val version = Version.LUCENE_47
 
+  def explain(id: String, term: String): String = {
+    val fields = Array("contents", "title")
+    val queryParser = new MultiFieldQueryParser(version, fields, analyser)
+    var q: Query = null
+    try {
+      q = queryParser.parse(term)
+    } catch {
+      case e: ParseException => q = queryParser.parse(QueryParserUtil.escape(term))
+    }
+    val hitsPerPage = 100;
+    val reader = DirectoryReader.open(index)
+    val searcher = new IndexSearcher(reader)
+    val collector = TopScoreDocCollector.create(hitsPerPage, true)
+    searcher.search(q, collector)
+    val hits = collector.topDocs().scoreDocs
+
+    // display results
+    val results = new ListBuffer[FetchedDocument]
+    println("Found " + hits.length + " hits.")
+    for (i <- 0.until(hits.length)) {
+      val docId = hits(i).doc;
+      val score = hits(i).score
+      val d = searcher.doc(docId)
+      if (d.get("id") == id) {
+        val explanation = searcher.explain(q, docId)
+        return explanation.toString
+      }
+
+    }
+    reader.close()
+    "no explanation can be offered..."
+  }
+
   def index = { FSDirectory.open(new File(indexDir)) }
 
   def analyser = { new StandardAnalyzer(version) }
@@ -43,7 +76,8 @@ object LuceneService {
 
   def createWriterConfig = { new IndexWriterConfig(version, analyser) }
 
-  def addSiteToIndex(uri: String, title: String = "") = {
+  def addSiteToIndex(uri: String, title: String = "", withLinks: Boolean = true): Unit = {
+
     withIndexWriter {
       indexWriter =>
         val doc = new Document()
@@ -59,6 +93,16 @@ object LuceneService {
         doc.add(new TextField("uri", uri, Field.Store.YES))
         doc.add(new StringField("type", "web-url", Field.Store.YES))
         indexWriter.addDocument(doc)
+
+        //        if (withLinks){
+        //        	for (link <- getLinks(contents)) {
+        //        		addSiteToIndex(link,"",false)
+        //        	}
+        //        }
+    }
+
+    def getLinks(html: String): List[String] = {
+      List("http://www.cnn.com/", "http://www.php.net/")
     }
   }
 
@@ -125,8 +169,8 @@ object LuceneService {
 
   def nextId = System.currentTimeMillis() + "." + idSource.incrementAndGet()
 
-  def clean(html:String) = html.replaceAll("\\<.*?>","")
-  
+  def clean(html: String) = html.replaceAll("\\<.*?>", "")
+
   def read(uri: String) = scala.io.Source.fromURL(uri).mkString
 
   def withIndexWriter(f: IndexWriter => Unit) = {
